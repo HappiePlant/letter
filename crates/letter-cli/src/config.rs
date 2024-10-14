@@ -11,26 +11,33 @@ fn get_config_path() -> PathBuf {
         .join("config.toml")
 }
 
-pub(crate) fn read_config() -> Config {
+pub(crate) fn read_config() -> Result<Config, String> {
     let config_path = get_config_path();
 
     match fs::read_to_string(&config_path) {
-        Ok(contents) => toml::from_str(&contents)
-            .unwrap_or_else(|_| Config::new()),
+        Ok(contents) => {
+            toml::from_str(&contents)
+                .unwrap_or_else(|err| Err(format!("Failed to read config file: {}", err)))
+        }
         Err(err) => {
             match err.kind() {
-                ErrorKind::NotFound => Config::new(),
-                _ => panic!()
+                ErrorKind::NotFound => Ok(Config::new()),
+                _ => Err(err.to_string()),
             }
         }
     }
 }
 
-pub(crate) fn write_config(config: &Config) {
+pub(crate) fn write_config(config: &Config) -> Result<(), String> {
     let config_path = get_config_path();
 
-    let config = toml::to_string_pretty(config).expect("Failed to serialize config");
+    let config = toml::to_string_pretty(config)
+        .map_err(|_| "Failed to serialize config")?;
 
-    fs::create_dir_all(config_path.parent().unwrap()).expect("Failed to create directory");
-    fs::write(config_path, config).expect("Failed to write config");
+    fs::create_dir_all(config_path.parent().unwrap())
+        .map_err(|_| "Failed to create config directory")?;
+
+    fs::write(config_path, config)
+        .map_err(|_| "Failed to write config file")?;
+    Ok(())
 }
