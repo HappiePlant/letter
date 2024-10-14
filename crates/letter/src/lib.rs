@@ -1,4 +1,5 @@
 use spdx::LicenseItem;
+use url::Url;
 
 struct Font {
     id: String,
@@ -11,19 +12,10 @@ struct Font {
 
 struct Version {
     version: String,
-    
 }
 
 struct Foundry {}
 
-struct Url(String);
-
-impl Url {
-    fn new(s: String) -> Url {
-        Url(s)
-    }
-}
-
 fn main() {
-    let url = Url::new("https://www.rust-lang.org".to_string());
+    let url = Url::parse("https://www.rust-lang.org");
 }
