@@ -1,5 +1,6 @@
 mod repo;
 mod font;
+mod config;
 
 use clap::Parser;
 
