@@ -1,31 +1,36 @@
-use url::Url;
-use serde::Deserialize;
-use toml;
 use std::fs;
-use std::io::{Error, ErrorKind};
+use std::io::ErrorKind;
+use std::path::PathBuf;
+use directories::ProjectDirs;
+use crate::config_file::Config;
 
-#[derive(Deserialize)]
-pub(crate) struct Config {
-    repo: Vec<Repo>,
+fn get_config_path() -> PathBuf {
+    ProjectDirs::from("", "", "letter")
+        .unwrap()
+        .config_dir()
+        .join("config.toml")
 }
 
-#[derive(Deserialize)]
-struct Repo {
-    id: String,
-    url: String,
-}
+pub(crate) fn read_config() -> Config {
+    let config_path = get_config_path();
 
-impl Config {
-    fn new() -> Self {
-        Self {
-            repo: Vec::new(),
+    match fs::read_to_string(&config_path) {
+        Ok(contents) => toml::from_str(&contents)
+            .unwrap_or_else(|_| Config::new()),
+        Err(err) => {
+            match err.kind() {
+                ErrorKind::NotFound => Config::new(),
+                _ => panic!()
+            }
         }
     }
 }
 
-fn read_config() {
-    let config = fs::read_to_string("config.toml");
-    // match config {
-    //     Ok(contents) => toml::from_str(contents.as_str()),
-    // }
+pub(crate) fn write_config(config: &Config) {
+    let config_path = get_config_path();
+
+    let config = toml::to_string_pretty(config).expect("Failed to serialize config");
+
+    fs::create_dir_all(config_path.parent().unwrap()).expect("Failed to create directory");
+    fs::write(config_path, config).expect("Failed to write config");
 }

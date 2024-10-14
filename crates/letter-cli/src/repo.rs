@@ -1,5 +1,7 @@
 use clap::{Parser, ValueHint};
+use crate::config::{read_config, write_config};
 use url::Url;
+use crate::config_file::{Config, Repo};
 
 #[derive(Parser, Debug)]
 pub(crate) enum Command {
@@ -32,4 +34,28 @@ fn list_repos() {
     println!("List of repositories:");
 }
 
-fn add_repo(args: AddArgs) {}
+fn add_repo(args: AddArgs) {
+    let mut config: Config = read_config();
+
+    let url = match Url::parse(&args.url) {
+        Ok(url) => url,
+        Err(_) => {
+            println!("Invalid URL");
+            return;
+        }
+    };
+
+    for repo in &config.repo {
+        if url == repo.url {
+            println!("Repo {} already exists", repo.id);
+            return;
+        }
+    }
+
+    config.repo.push(Repo {
+        id: "ofa".to_string(),
+        url,
+    });
+
+    write_config(&config);
+}
