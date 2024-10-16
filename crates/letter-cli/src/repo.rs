@@ -28,7 +28,7 @@ pub(crate) fn run(cmd: Command) {
     match cmd {
         Command::List => list_repos(),
         Command::Add(args) => add_repo(args),
-        _ => todo!(),
+        Command::Remove(args) => remove_repo(args),
     }
 }
 
@@ -78,4 +78,31 @@ fn add_repo(args: AddArgs) {
             println!("{}", err);
         }
     };
+}
+
+fn remove_repo(args: RemoveArgs) {
+    let mut config: Config = match read_config() {
+        Ok(config) => config,
+        Err(err) => {
+            println!("{}", err);
+            return;
+        }
+    };
+
+    let index = config.repo.iter().position(|repo| repo.id == args.id);
+
+    if index.is_none() {
+        println!("Repo {} was not found", args.id);
+        return;
+    }
+
+    config.repo.remove(index.unwrap());
+
+    match write_config(&config) {
+        Ok(_) => println!("Repo added"),
+        Err(err) => {
+            println!("{}", err);
+        }
+    };
+    println!("Repo {} was removed", args.id);
 }
