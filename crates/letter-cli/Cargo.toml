@@ -9,6 +9,7 @@ toml = "0.8.19"
 url = "2.5.2"
 serde = { version = "1.0.210", features = ["derive"] }
 directories = "5.0.1"
+ansi_term = "0.12.1"
 
 [[bin]]
 name = "letter"

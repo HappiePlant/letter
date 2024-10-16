@@ -2,6 +2,7 @@ use clap::{Parser, ValueHint};
 use crate::config::{read_config, write_config};
 use url::Url;
 use crate::config_file::{Config, Repo};
+use ansi_term::Style;
 
 #[derive(Parser, Debug)]
 pub(crate) enum Command {
@@ -34,7 +35,19 @@ pub(crate) fn run(cmd: Command) {
 
 
 fn list_repos() {
-    println!("List of repositories:");
+    let config: Config = match read_config() {
+        Ok(config) => config,
+        Err(err) => {
+            println!("{}", err);
+            return;
+        }
+    };
+
+    println!("{}", Style::new().bold().paint("Repo ID\t\tURL"));
+    for repo in config.repo {
+        println!("{}\t\t{}", repo.id, repo.url);
+    }
+    // TODO: Make tab size dynamic
 }
 
 fn add_repo(args: AddArgs) {
