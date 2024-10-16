@@ -112,10 +112,9 @@ fn remove_repo(args: RemoveArgs) {
     config.repo.remove(index.unwrap());
 
     match write_config(&config) {
-        Ok(_) => println!("Repo added"),
+        Ok(_) => println!("Repo {} was removed", args.id),
         Err(err) => {
             println!("{}", err);
         }
     };
-    println!("Repo {} was removed", args.id);
 }
