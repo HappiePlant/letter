@@ -14,6 +14,9 @@ pub(crate) enum Command {
 pub(crate) struct AddArgs {
     #[clap(value_hint = ValueHint::Url)]
     url: String,
+
+    #[arg(long)]
+    id: Option<String>,
 }
 
 #[derive(Parser, Debug)]
@@ -51,15 +54,21 @@ fn add_repo(args: AddArgs) {
         }
     };
 
+    let id = args.id.unwrap_or_else(|| "ofa".to_string());
+
     for repo in &config.repo {
         if url == repo.url {
-            println!("Repo {} already exists", repo.id);
+            println!("Repo {} already exists (same url)", repo.id);
+            return;
+        }
+        if id == repo.id {
+            println!("Repo with name {} already exists", id);
             return;
         }
     }
 
     config.repo.push(Repo {
-        id: "ofa".to_string(),
+        id,
         url,
     });
 
