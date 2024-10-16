@@ -14,18 +14,21 @@ fn get_config_path() -> PathBuf {
 pub(crate) fn read_config() -> Result<Config, String> {
     let config_path = get_config_path();
 
-    match fs::read_to_string(&config_path) {
-        Ok(contents) => {
-            toml::from_str(&contents)
-                .unwrap_or_else(|err| Err(format!("Failed to read config file: {}", err)))
-        }
+    let contents = match fs::read_to_string(&config_path) {
+        Ok(contents) => contents,
         Err(err) => {
-            match err.kind() {
+            return match err.kind() {
                 ErrorKind::NotFound => Ok(Config::new()),
                 _ => Err(err.to_string()),
             }
         }
-    }
+    };
+
+    let config: Config = match toml::from_str(&contents) {
+        Ok(config) => config,
+        Err(err) => return Err(format!("Failed to parse config file: {}", err)),
+    };
+    Ok(config)
 }
 
 pub(crate) fn write_config(config: &Config) -> Result<(), String> {

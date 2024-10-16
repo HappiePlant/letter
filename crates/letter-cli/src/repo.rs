@@ -35,7 +35,13 @@ fn list_repos() {
 }
 
 fn add_repo(args: AddArgs) {
-    let mut config: Config = read_config();
+    let mut config: Config = match read_config() {
+        Ok(config) => config,
+        Err(err) => {
+            println!("{}", err);
+            return;
+        }
+    };
 
     let url = match Url::parse(&args.url) {
         Ok(url) => url,
@@ -57,5 +63,10 @@ fn add_repo(args: AddArgs) {
         url,
     });
 
-    write_config(&config);
+    match write_config(&config) {
+        Ok(_) => println!("Repo added"),
+        Err(err) => {
+            println!("{}", err);
+        }
+    };
 }
