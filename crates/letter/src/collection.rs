@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, ToSchema)]
 /// Collection metadata
 pub struct Collection {
+    pub id: String,
     pub name: String,
     pub types: Vec<CollectionType>,
     pub urls: CollectionUrls,

@@ -82,6 +82,6 @@ pub enum FontStyle {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct CollectionRelation {
-    url: Option<String>,
-    collection: Collection,
+    pub url: Option<String>,
+    pub collection: Collection,
 }

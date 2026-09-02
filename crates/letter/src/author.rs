@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, ToSchema)]
 /// Font author metadata
 pub struct Author {
+    pub id: String,
     pub name: String,
     pub urls: AuthorUrls,
 }
