@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{UriType, author::Author, collection::Collection};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 /// Font metadata
 pub struct Font {
     pub id: String,
@@ -20,14 +21,14 @@ pub struct Font {
     pub versions: Vec<Version>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct ForkOf {
     pub uri: String,
     pub r#type: UriType,
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct FontUrls {
     /// Official website of the font
     pub website: Option<String>,
@@ -35,7 +36,7 @@ pub struct FontUrls {
     pub source: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct Version {
     pub number: String,
     /// Direct download url to the file, backup urls can be provided
@@ -47,13 +48,14 @@ pub struct Version {
     pub files: Vec<VersionFile>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum FileType {
     Zip,
     SingleFile,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct VersionFile {
     /// Glob pattern to match the files in the zip, or the single file name
     pub glob: String,
@@ -61,7 +63,8 @@ pub struct VersionFile {
     pub format: FontFormat,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum FontFormat {
     OTF,
     TTF,
@@ -70,13 +73,14 @@ pub enum FontFormat {
     TTC,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum FontStyle {
     Variable,
     Static,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CollectionRelation {
     url: Option<String>,
     collection: Collection,

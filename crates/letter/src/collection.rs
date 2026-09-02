@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 /// Collection metadata
 pub struct Collection {
     pub name: String,
@@ -8,7 +9,8 @@ pub struct Collection {
     pub urls: CollectionUrls,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum CollectionType {
     /// Collection contains fonts specifically made for it
     Foundry,
@@ -18,7 +20,7 @@ pub enum CollectionType {
     List,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CollectionUrls {
     /// Official website of collection
     pub website: Option<String>,
