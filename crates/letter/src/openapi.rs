@@ -5,13 +5,24 @@ use crate::font::Font;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
-#[openapi(paths(get_repo_info, get_fonts, get_font, get_collections, get_collection, get_authors, get_author))]
+#[openapi(
+    paths(
+        get_repo_info,
+        get_fonts,
+        get_font,
+        get_collections,
+        get_collection,
+        get_authors,
+        get_author
+    ),
+    info(title = "Letter repository", license(name = "ARR"))
+)]
 pub struct ApiDoc;
 
 #[utoipa::path(
     get,
     tag = "Repo",
-    path = "",
+    path = "/",
     responses(
         (status = 200, description = "Get repo info", body = RepoInfo)
     )
