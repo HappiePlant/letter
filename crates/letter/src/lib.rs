@@ -1,21 +1,12 @@
-use spdx::LicenseItem;
-use url::Url;
+use serde::{Deserialize, Serialize};
 
-struct Font {
-    id: String,
-    name: String,
-    homepage: Url,
-    license: LicenseItem,
-    versions: Vec<Version>,
-    foundry: Foundry,
-}
+pub mod author;
+pub mod collection;
+pub mod endpoints;
+pub mod font;
 
-struct Version {
-    version: String,
-}
-
-struct Foundry {}
-
-fn main() {
-    let url = Url::parse("https://www.rust-lang.org");
+#[derive(Serialize, Deserialize)]
+pub enum UriType {
+    External,
+    Letter,
 }
