@@ -3,38 +3,48 @@ use serde::{Deserialize, Serialize};
 use crate::{UriType, author::Author, collection::Collection};
 
 #[derive(Serialize, Deserialize)]
+/// Font metadata
 pub struct Font {
-    id: String,
-    name: String,
-    authors: Vec<Author>,
-    foundry: Option<CollectionRelation>,
-    licenses: Vec<String>,
-    fork_of: Option<ForkOf>,
-    urls: FontUrls,
-    collections: Vec<CollectionRelation>,
-    versions: Vec<Version>,
+    pub id: String,
+    pub name: String,
+    pub authors: Vec<Author>,
+    /// Main foundry of the font
+    pub foundry: Option<CollectionRelation>,
+    pub licenses: Vec<String>,
+    /// Optional relation to a font that this font is a fork of
+    pub fork_of: Option<ForkOf>,
+    pub urls: FontUrls,
+    /// Collections that this font is a part of
+    pub collections: Vec<CollectionRelation>,
+    /// List of versions of the font, sorted from newest to oldest
+    pub versions: Vec<Version>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ForkOf {
-    uri: String,
-    r#type: UriType,
-    name: Option<String>,
+    pub uri: String,
+    pub r#type: UriType,
+    pub name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FontUrls {
-    website: Option<String>,
-    source: Option<String>,
+    /// Official website of the font
+    pub website: Option<String>,
+    /// Source code repository of the font
+    pub source: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Version {
-    number: String,
-    urls: Vec<String>,
-    hash: String,
-    r#type: FileType,
-    files: Vec<VersionFile>,
+    pub number: String,
+    /// Direct download url to the file, backup urls can be provided
+    pub urls: Vec<String>,
+    /// Sha256 hash of the linked file
+    pub hash: String,
+    pub r#type: FileType,
+    /// Contents of the linked file, used for installing it
+    pub files: Vec<VersionFile>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -45,6 +55,7 @@ pub enum FileType {
 
 #[derive(Serialize, Deserialize)]
 pub struct VersionFile {
+    /// Glob pattern to match the files in the zip, or the single file name
     pub glob: String,
     pub style: FontStyle,
     pub format: FontFormat,

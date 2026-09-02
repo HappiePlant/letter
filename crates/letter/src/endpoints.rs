@@ -1,7 +1,5 @@
 use crate::{author::Author, collection::Collection, font::Font};
 
-pub type FontsResponse = Vec<Font>;
-
 pub struct CollectionResponse {
     pub collection: Collection,
     pub fonts: Vec<Font>,
