@@ -1,6 +1,6 @@
 mod config;
 mod config_file;
-mod files;
+mod os;
 mod font;
 mod network;
 mod repo;

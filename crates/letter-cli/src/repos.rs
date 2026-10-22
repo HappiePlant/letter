@@ -7,6 +7,7 @@ use crate::{
     config_file::Config,
     font::FontArgs,
     network::{download_font_file, RepoClient},
+    os, store,
 };
 
 pub(crate) struct RepoList {
@@ -49,7 +50,8 @@ impl RepoList {
         if file.is_none() {
             panic!("Failed to download font file");
         }
-
+        let store_path = store::store_font(version, &font.id, repo_id, file.unwrap()).unwrap();
+        os::install_font(&font.id, repo_id, store_path);
     }
 
     pub(crate) async fn install_font_cmd(&self, args: FontArgs) {

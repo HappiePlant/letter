@@ -3,14 +3,19 @@ use std::{fs, path::PathBuf, sync::LazyLock};
 use directories::ProjectDirs;
 use letter_core::font::{FileType, Version};
 
-static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     ProjectDirs::from("", "", "letter")
         .unwrap()
         .data_dir()
         .join("store")
 });
 
-pub(crate) fn install_font_files(version: &Version, font_id: &str, repo_id: &str, file: Vec<u8>) {
+pub(crate) fn store_font(
+    version: &Version,
+    font_id: &str,
+    repo_id: &str,
+    file: Vec<u8>,
+) -> Result<PathBuf, String> {
     let font_dir = STORE_DIR.join(repo_id).join(font_id).join(&version.number);
     fs::create_dir_all(&font_dir).expect("Failed to create font directory");
 
@@ -25,4 +30,5 @@ pub(crate) fn install_font_files(version: &Version, font_id: &str, repo_id: &str
             fs::write(font_dir.join(filename), file).expect("Failed to write file");
         }
     }
+    return Ok(font_dir);
 }
