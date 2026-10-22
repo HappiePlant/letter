@@ -68,8 +68,8 @@ impl RepoList {
             0 => println!("Font not found in any repo"),
             1 => {
                 let (repo_id, font) = &valid_options[0];
-                Self::install_font(font, repo_id);
                 println!("Installing font: {} from repo: {}", font.name, repo_id);
+                Self::install_font(font, repo_id).await;
             }
             _ => {
                 todo!("Multiple fonts found, please specify a repo");
