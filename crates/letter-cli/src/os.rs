@@ -13,8 +13,11 @@ pub(crate) fn install_font(font_id: &str, repo_id: &str, store_path: PathBuf) {
 }
 
 #[cfg(target_os = "linux")]
-static LINUX_FONT_DIR: LazyLock<PathBuf> =
-    LazyLock::new(|| Path::new("~/.local/share/fonts").join("letter"));
+static LINUX_FONT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    Path::new(&std::env::home_dir().expect("Failed loading home dir"))
+        .join(".local/share/fonts")
+        .join("letter")
+});
 
 #[cfg(target_os = "linux")]
 fn linux(font_id: &str, repo_id: &str, store_path: PathBuf) {
