@@ -1,10 +1,11 @@
 mod config;
 mod config_file;
+mod files;
 mod font;
 mod network;
 mod repo;
 mod repos;
-mod files;
+mod store;
 
 use clap::Parser;
 
