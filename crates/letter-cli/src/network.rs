@@ -1,6 +1,8 @@
-use std::sync::LazyLock;
+// use bytes::Bytes;
+use std::{str::Bytes, sync::LazyLock};
 
 use letter_core::{font::Font, RepoInfo};
+use sha2::{Digest, Sha256};
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
@@ -20,5 +22,20 @@ impl RepoClient {
         let response = CLIENT.get(&url).send().await?;
         let font: letter_core::font::Font = response.json().await?;
         Ok(font)
+    }
+}
+
+pub(crate) async fn download_font_file(
+    url: &str,
+    expected_hash: &str,
+) -> Result<Vec<u8>, reqwest::Error> {
+    let response = CLIENT.get(url).send().await?;
+    let bytes = response.bytes().await?;
+    let actual_hash = Sha256::digest(bytes.clone());
+    let decoded_expected_hash = hex::decode(expected_hash).expect("Invalid expected hash");
+    if actual_hash.as_slice() != decoded_expected_hash.as_slice() {
+        panic!("Hash mismatch");
+    } else {
+        Ok(bytes.to_vec())
     }
 }

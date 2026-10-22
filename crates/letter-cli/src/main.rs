@@ -4,6 +4,7 @@ mod font;
 mod network;
 mod repo;
 mod repos;
+mod files;
 
 use clap::Parser;
 
@@ -27,7 +28,7 @@ async fn main() {
     let repo_list = RepoList::new();
     match args {
         Cli::Repo(cmd) => repo::run(cmd).await,
-        Cli::Install(args) => repo_list.install_font(args).await,
+        Cli::Install(args) => repo_list.install_font_cmd(args).await,
         _ => todo!(),
     }
 }

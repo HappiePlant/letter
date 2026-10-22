@@ -1,6 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{config::read_config, config_file::Config, font::FontArgs, network::RepoClient};
+use letter_core::font::Font;
+
+use crate::{
+    config::read_config,
+    config_file::Config,
+    font::FontArgs,
+    network::{download_font_file, RepoClient},
+};
 
 pub(crate) struct RepoList {
     clients: HashMap<String, RepoClient>,
@@ -25,12 +32,32 @@ impl RepoList {
         Self { clients, config }
     }
 
-    pub(crate) async fn install_font(&self, args: FontArgs) {
+    async fn install_font(font: &Font, repo_id: &str) {
+        let version = font.versions.first().expect("Font has no versions");
+        let mut file = None;
+        for url in &version.urls {
+            match download_font_file(url, &version.hash).await {
+                Ok(f) => {
+                    file = Some(f);
+                    break;
+                }
+                Err(_) => {
+                    continue;
+                }
+            }
+        }
+        if file.is_none() {
+            panic!("Failed to download font file");
+        }
+
+    }
+
+    pub(crate) async fn install_font_cmd(&self, args: FontArgs) {
         let mut valid_options = Vec::new();
-        for client in self.clients.values() {
+        for (repo_id, client) in self.clients.iter() {
             match client.get_font(args.id.as_str()).await {
                 Ok(font) => {
-                    valid_options.push(font);
+                    valid_options.push((repo_id, font));
                 }
                 Err(_) => {}
             }
@@ -38,8 +65,9 @@ impl RepoList {
         match valid_options.len() {
             0 => println!("Font not found in any repo"),
             1 => {
-                let font = &valid_options[0];
-                println!("Installing font: {}", font.name);
+                let (repo_id, font) = &valid_options[0];
+                Self::install_font(font, repo_id);
+                println!("Installing font: {} from repo: {}", font.name, repo_id);
             }
             _ => {
                 todo!("Multiple fonts found, please specify a repo");
