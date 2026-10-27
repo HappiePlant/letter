@@ -7,8 +7,15 @@ pub(crate) struct FontArgs {
     pub(crate) repo: Option<String>,
 }
 
-pub(crate) struct InstalledFont {
+#[derive(Clone, Debug)]
+pub(crate) struct StoredFont {
     pub id: String,
     pub repo_id: String,
     pub version: String,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct InstalledFont {
+    pub id: String,
+    pub repo_id: String,
 }

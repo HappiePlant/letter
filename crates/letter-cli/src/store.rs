@@ -10,7 +10,7 @@ use globset::{Glob, GlobSetBuilder};
 use letter_core::font::{FileType, Version};
 use zip::ZipArchive;
 
-use crate::font::InstalledFont;
+use crate::font::StoredFont;
 
 pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     ProjectDirs::from("", "", "letter")
@@ -18,6 +18,12 @@ pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
         .data_dir()
         .join("store")
 });
+
+pub(crate) fn get_store_path(repo_id: &str, font_id: &str) -> PathBuf {
+    let dir = STORE_DIR.join(repo_id).join(font_id);
+    let mut versions = fs::read_dir(&dir).unwrap();
+    dir.join(versions.nth(0).unwrap().unwrap().file_name())
+}
 
 pub(crate) fn store_font(
     version: &Version,
@@ -63,8 +69,8 @@ pub(crate) fn store_font(
     return Ok(font_dir);
 }
 
-pub(crate) fn list_fonts() -> Vec<InstalledFont> {
-    let mut installed_fonts: Vec<InstalledFont> = Vec::new();
+pub(crate) fn list_fonts() -> Vec<StoredFont> {
+    let mut installed_fonts: Vec<StoredFont> = Vec::new();
     let repos = fs::read_dir(STORE_DIR.as_path()).expect("Failed to read store directory");
     for repo in repos {
         let repo = repo.expect("Failed to read repo directory");
@@ -74,7 +80,7 @@ pub(crate) fn list_fonts() -> Vec<InstalledFont> {
             let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
             for version in versions {
                 let version = version.expect("Failed to read version directory");
-                installed_fonts.push(InstalledFont {
+                installed_fonts.push(StoredFont {
                     id: font.file_name().to_string_lossy().to_string(),
                     repo_id: repo.file_name().to_string_lossy().to_string(),
                     version: version.file_name().to_string_lossy().to_string(),
@@ -85,8 +91,8 @@ pub(crate) fn list_fonts() -> Vec<InstalledFont> {
     installed_fonts
 }
 
-pub(crate) fn find_font(font_id: &str) -> Result<Vec<InstalledFont>, ()> {
-    let mut matches: Vec<InstalledFont> = Vec::new();
+pub(crate) fn find_font(font_id: &str) -> Result<Vec<StoredFont>, ()> {
+    let mut matches: Vec<StoredFont> = Vec::new();
     let repos = fs::read_dir(STORE_DIR.as_path()).expect("Failed to read store directory");
     for repo in repos {
         let repo = repo.expect("Failed to read repo directory");
@@ -97,7 +103,7 @@ pub(crate) fn find_font(font_id: &str) -> Result<Vec<InstalledFont>, ()> {
                 let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
                 for version in versions {
                     let version = version.expect("Failed to read version directory");
-                    matches.push(InstalledFont {
+                    matches.push(StoredFont {
                         id: font.file_name().to_string_lossy().to_string(),
                         repo_id: repo.file_name().to_string_lossy().to_string(),
                         version: version.file_name().to_string_lossy().to_string(),

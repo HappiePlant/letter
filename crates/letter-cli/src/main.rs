@@ -16,6 +16,8 @@ use crate::repos::RepoList;
 enum Cli {
     Install(font::FontArgs),
     Remove(font::FontArgs),
+    Disable(font::FontArgs),
+    Enable(font::FontArgs),
     List,
 
     #[clap(subcommand)]
@@ -32,5 +34,7 @@ async fn main() {
         Cli::Install(args) => repo_list.install_font_cmd(args).await,
         Cli::List => repo_list.list_fonts_cmd().await,
         Cli::Remove(args) => repo_list.remove_font_cmd(args).await,
+        Cli::Enable(args) => repo_list.enable_font_cmd(args).await,
+        Cli::Disable(args) => repo_list.disable_font_cmd(args).await,
     }
 }

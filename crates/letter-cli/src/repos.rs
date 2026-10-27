@@ -5,7 +5,7 @@ use letter_core::font::Font;
 use crate::{
     config::read_config,
     config_file::Config,
-    font::FontArgs,
+    font::{FontArgs, StoredFont},
     network::{download_font_file, RepoClient},
     os, store,
 };
@@ -89,29 +89,52 @@ impl RepoList {
     }
 
     pub(crate) async fn list_fonts_cmd(&self) {
-        let installed_fonts = store::list_fonts();
-        for font in installed_fonts {
+        let stored_fonts = store::list_fonts();
+        let installed_fonts = os::list_fonts();
+        for font in stored_fonts {
+            let is_enabled = installed_fonts
+                .iter()
+                .any(|f| f.id == font.id && f.repo_id == font.repo_id);
             println!(
-                "Font: {}, Repo: {}, Version: {}",
-                font.id, font.repo_id, font.version
+                "Font: {}, Repo: {}, Version: {}, Enabled: {}",
+                font.id, font.repo_id, font.version, is_enabled
             );
         }
     }
 
-    pub(crate) async fn remove_font_cmd(&self, args: FontArgs) {
-        let repo_id = args.repo.unwrap_or_else(|| {
-            let fonts = store::find_font(&args.id).unwrap();
-            match fonts.len() {
-                0 => {
-                    panic!("Font not found in any repo");
-                }
-                1 => fonts.first().unwrap().repo_id.clone(),
-                _ => {
-                    panic!("Multiple fonts found, please specify a repo");
-                }
+    fn find_font(&self, font_id: &str) -> Result<StoredFont, ()> {
+        let fonts = store::find_font(font_id).unwrap();
+        match fonts.len() {
+            0 => {
+                panic!("Font not found in any repo");
             }
-        });
+            1 => Ok(fonts.first().unwrap().clone()),
+            _ => {
+                panic!("Multiple fonts found, please specify a repo");
+            }
+        }
+    }
+
+    pub(crate) async fn remove_font_cmd(&self, args: FontArgs) {
+        let repo_id = args
+            .repo
+            .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
         store::remove_font(&args.id, &repo_id).unwrap();
         os::remove_font(&args.id, &repo_id);
+    }
+
+    pub(crate) async fn disable_font_cmd(&self, args: FontArgs) {
+        let repo_id = args
+            .repo
+            .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
+        os::remove_font(&args.id, &repo_id);
+    }
+
+    pub(crate) async fn enable_font_cmd(&self, args: FontArgs) {
+        let repo_id = args
+            .repo
+            .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
+        let store_path = store::get_store_path(&repo_id, &args.id);
+        os::install_font(&args.id, &repo_id, store_path);
     }
 }
