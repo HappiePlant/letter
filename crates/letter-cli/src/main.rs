@@ -1,6 +1,6 @@
+mod args;
 mod config;
 mod config_file;
-mod args;
 mod network;
 mod os;
 mod repo;
@@ -16,9 +16,11 @@ use crate::repos::RepoList;
 enum Cli {
     Install(args::InstallFontArgs),
     Remove(args::FontArgs),
-    Disable(args::FontArgs),
-    Enable(args::FontArgs),
     List,
+    Enable(args::FontArgs),
+    Disable(args::FontArgs),
+
+    Search(args::SearchArgs),
 
     #[clap(subcommand)]
     Repo(repo::Command),
@@ -30,11 +32,12 @@ async fn main() {
     println!("{:?}", args);
     let repo_list = RepoList::new();
     match args {
-        Cli::Repo(cmd) => repo::run(cmd).await,
         Cli::Install(args) => repo_list.install_font_cmd(args).await,
-        Cli::List => repo_list.list_fonts_cmd().await,
         Cli::Remove(args) => repo_list.remove_font_cmd(args).await,
+        Cli::List => repo_list.list_fonts_cmd().await,
         Cli::Enable(args) => repo_list.enable_font_cmd(args).await,
         Cli::Disable(args) => repo_list.disable_font_cmd(args).await,
+        Cli::Search(args) => repo_list.search_fonts_cmd(args).await,
+        Cli::Repo(cmd) => repo::run(cmd).await,
     }
 }

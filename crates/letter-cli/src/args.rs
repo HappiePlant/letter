@@ -5,6 +5,17 @@ use letter_core::font::FontFormat;
 pub(crate) struct FontArgs {
     pub(crate) id: String,
 
+    /// Repository id
+    #[arg(short, long)]
+    pub(crate) repo: Option<String>,
+}
+
+#[derive(Parser, Debug)]
+pub(crate) struct SearchArgs {
+    /// Optional search query. If not specified, all fonts will be returned
+    pub(crate) query: Option<String>,
+
+    /// Only search in this repository
     #[arg(short, long)]
     pub(crate) repo: Option<String>,
 }
@@ -12,6 +23,8 @@ pub(crate) struct FontArgs {
 #[derive(Parser, Debug)]
 pub(crate) struct InstallFontArgs {
     pub(crate) id: String,
+
+    /// Repository id
     #[arg(short, long)]
     pub(crate) repo: Option<String>,
 
@@ -52,4 +65,3 @@ impl CliFontFormat {
         }
     }
 }
-

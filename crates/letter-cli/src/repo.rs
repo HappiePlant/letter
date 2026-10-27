@@ -5,6 +5,7 @@ use crate::{
 };
 use ansi_term::Style;
 use clap::{Parser, ValueHint};
+use letter_core::RepoInfo;
 use url::Url;
 
 #[derive(Parser, Debug)]
@@ -17,6 +18,7 @@ pub(crate) enum Command {
 
 #[derive(Parser, Debug)]
 pub(crate) struct AddArgs {
+    /// URL of the repository to add
     #[clap(value_hint = ValueHint::Url)]
     url: String,
 
@@ -39,7 +41,7 @@ pub(crate) async fn run(cmd: Command) {
         Command::List => list_repos(),
         Command::Add(args) => add_repo(args).await,
         Command::Remove(args) => remove_repo(args),
-        Command::Info(args) => get_repo_info(args),
+        Command::Info(args) => get_repo_info(args).await,
     }
 }
 
@@ -59,7 +61,36 @@ fn list_repos() {
     // TODO: Make tab size dynamic
 }
 
-fn get_repo_info(args: InfoArgs) {}
+async fn get_repo_info(args: InfoArgs) {
+    let config: Config = match read_config() {
+        Ok(config) => config,
+        Err(err) => {
+            println!("{}", err);
+            return;
+        }
+    };
+    let client = RepoClient {
+        base_url: config
+            .repo
+            .iter()
+            .find(|repo| repo.id == args.id)
+            .expect("Repo not found")
+            .url
+            .clone()
+            .to_string(),
+    };
+    let repo_info = client.get_repo_info().await.unwrap();
+    print_repo_info(&repo_info);
+}
+
+fn print_repo_info(info: &RepoInfo) {
+    println!("{}{}", Style::new().bold().paint("Name: "), info.name);
+    println!(
+        "{}{}",
+        Style::new().bold().paint("Description: "),
+        info.description
+    );
+}
 
 async fn add_repo(args: AddArgs) {
     let mut config: Config = match read_config() {
@@ -83,12 +114,8 @@ async fn add_repo(args: AddArgs) {
     };
     let repo_info = client.get_repo_info().await.unwrap();
 
-    println!("{}{}", Style::new().bold().paint("Name: "), repo_info.name);
-    println!(
-        "{}{}",
-        Style::new().bold().paint("Description: "),
-        repo_info.description
-    );
+    print_repo_info(&repo_info);
+
     println!("{}{}", Style::new().bold().paint("URL: "), url);
     // TODO: Ask confirmation about ID or allow entering a custom ID
     println!(

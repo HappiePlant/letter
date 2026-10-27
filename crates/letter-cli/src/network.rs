@@ -1,5 +1,4 @@
-// use bytes::Bytes;
-use std::{str::Bytes, sync::LazyLock};
+use std::sync::LazyLock;
 
 use letter_core::{font::Font, RepoInfo};
 use sha2::{Digest, Sha256};
@@ -22,6 +21,19 @@ impl RepoClient {
         let response = CLIENT.get(&url).send().await?;
         let font: letter_core::font::Font = response.json().await?;
         Ok(font)
+    }
+
+    pub(crate) async fn search_fonts(
+        &self,
+        query: Option<&str>,
+    ) -> Result<Vec<Font>, reqwest::Error> {
+        let url = match query {
+            Some(q) => format!("{}fonts?query={}", self.base_url, q),
+            None => format!("{}fonts", self.base_url),
+        };
+        let response = CLIENT.get(&url).send().await?;
+        let fonts: Vec<letter_core::font::Font> = response.json().await?;
+        Ok(fonts)
     }
 }
 

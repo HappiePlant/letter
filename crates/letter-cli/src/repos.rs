@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use letter_core::font::{Font, FontStyle};
 
 use crate::{
-    args::{FontArgs, InstallFontArgs},
+    args::{FontArgs, InstallFontArgs, SearchArgs},
     config::read_config,
     config_file::Config,
     network::{download_font_file, RepoClient},
-    os, store,
-    store::StoredFont,
+    os,
+    store::{self, StoredFont},
 };
 
 pub(crate) struct RepoList {
@@ -165,5 +165,34 @@ impl RepoList {
             .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
         let store_path = store::get_store_path(&repo_id, &args.id);
         os::install_font(&args.id, &repo_id, store_path);
+    }
+
+    pub(crate) async fn search_fonts_cmd(&self, args: SearchArgs) {
+        let mut fonts: Vec<(String, Vec<Font>)> = Vec::new();
+        if args.repo.is_some() {
+            let repo_id = args.repo.clone().unwrap();
+            let client = self.clients.get(&repo_id).expect("Repo not found");
+            match client.search_fonts(args.query.as_deref()).await {
+                Ok(f) => {
+                    fonts.push((repo_id, f));
+                }
+                Err(_) => {}
+            }
+        } else {
+            for (repo_id, client) in self.clients.iter() {
+                match client.search_fonts(args.query.as_deref()).await {
+                    Ok(f) => {
+                        fonts.push((repo_id.clone(), f));
+                    }
+                    Err(_) => {}
+                }
+            }
+        }
+        for (repo_id, fonts) in fonts {
+            println!("Repo: {}", repo_id);
+            for font in fonts {
+                println!("\tFont: {}, ID: {}", font.name, font.id);
+            }
+        }
     }
 }
