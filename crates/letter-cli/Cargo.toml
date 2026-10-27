@@ -17,6 +17,7 @@ sha2 = "0.11.0"
 hex = "0.4.3"
 zip = "9.0.5"
 globset = "0.4.20"
+clap_complete = "4.6.11"
 
 [[bin]]
 name = "letter"

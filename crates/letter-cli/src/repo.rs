@@ -10,9 +10,13 @@ use url::Url;
 
 #[derive(Parser, Debug)]
 pub(crate) enum Command {
+    /// Add a repository
     Add(AddArgs),
+    /// Remove a repository
     Remove(RemoveArgs),
+    /// List added repositories
     List,
+    /// Fetch info of a repository
     Info(InfoArgs),
 }
 

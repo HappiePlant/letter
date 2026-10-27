@@ -1,4 +1,5 @@
 use clap::{Parser, ValueEnum};
+use clap_complete::Shell;
 use letter_core::font::FontFormat;
 
 #[derive(Parser, Debug)]
@@ -64,4 +65,11 @@ impl CliFontFormat {
             CliFontFormat::TTC => FontFormat::TTC,
         }
     }
+}
+
+#[derive(Parser, Debug)]
+pub(crate) struct CompletionArgs {
+    /// Shell to generate completion for
+    #[arg(value_parser = clap::value_parser!(Shell))]
+    pub(crate) shell: Shell,
 }
