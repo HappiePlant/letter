@@ -56,12 +56,23 @@ impl RepoList {
 
     pub(crate) async fn install_font_cmd(&self, args: FontArgs) {
         let mut valid_options = Vec::new();
-        for (repo_id, client) in self.clients.iter() {
+        if args.repo.is_some() {
+            let repo_id = args.repo.unwrap();
+            let client = self.clients.get(&repo_id).expect("Repo not found");
             match client.get_font(args.id.as_str()).await {
                 Ok(font) => {
                     valid_options.push((repo_id, font));
                 }
                 Err(_) => {}
+            }
+        } else {
+            for (repo_id, client) in self.clients.iter() {
+                match client.get_font(args.id.as_str()).await {
+                    Ok(font) => {
+                        valid_options.push((repo_id.clone(), font));
+                    }
+                    Err(_) => {}
+                }
             }
         }
         match valid_options.len() {
@@ -85,5 +96,22 @@ impl RepoList {
                 font.id, font.repo_id, font.version
             );
         }
+    }
+
+    pub(crate) async fn remove_font_cmd(&self, args: FontArgs) {
+        let repo_id = args.repo.unwrap_or_else(|| {
+            let fonts = store::find_font(&args.id).unwrap();
+            match fonts.len() {
+                0 => {
+                    panic!("Font not found in any repo");
+                }
+                1 => fonts.first().unwrap().repo_id.clone(),
+                _ => {
+                    panic!("Multiple fonts found, please specify a repo");
+                }
+            }
+        });
+        store::remove_font(&args.id, &repo_id).unwrap();
+        os::remove_font(&args.id, &repo_id);
     }
 }

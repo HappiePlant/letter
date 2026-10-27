@@ -84,3 +84,37 @@ pub(crate) fn list_fonts() -> Vec<InstalledFont> {
     }
     installed_fonts
 }
+
+pub(crate) fn find_font(font_id: &str) -> Result<Vec<InstalledFont>, ()> {
+    let mut matches: Vec<InstalledFont> = Vec::new();
+    let repos = fs::read_dir(STORE_DIR.as_path()).expect("Failed to read store directory");
+    for repo in repos {
+        let repo = repo.expect("Failed to read repo directory");
+        let fonts = fs::read_dir(repo.path()).expect("Failed to read repo directory");
+        for font in fonts {
+            let font = font.expect("Failed to read version directory");
+            if font.file_name().to_string_lossy() == font_id {
+                let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
+                for version in versions {
+                    let version = version.expect("Failed to read version directory");
+                    matches.push(InstalledFont {
+                        id: font.file_name().to_string_lossy().to_string(),
+                        repo_id: repo.file_name().to_string_lossy().to_string(),
+                        version: version.file_name().to_string_lossy().to_string(),
+                    });
+                }
+            }
+        }
+    }
+    Ok(matches)
+}
+
+pub(crate) fn remove_font(font_id: &str, repo_id: &str) -> Result<PathBuf, ()> {
+    let font_dir = STORE_DIR.join(repo_id).join(font_id);
+    if font_dir.exists() {
+        fs::remove_dir_all(&font_dir).expect("Failed to remove font directory");
+        Ok(font_dir)
+    } else {
+        Err(())
+    }
+}

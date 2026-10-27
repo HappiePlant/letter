@@ -31,6 +31,6 @@ async fn main() {
         Cli::Repo(cmd) => repo::run(cmd).await,
         Cli::Install(args) => repo_list.install_font_cmd(args).await,
         Cli::List => repo_list.list_fonts_cmd().await,
-        _ => todo!(),
+        Cli::Remove(args) => repo_list.remove_font_cmd(args).await,
     }
 }
