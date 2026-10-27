@@ -1,8 +1,8 @@
 mod config;
 mod config_file;
-mod os;
 mod font;
 mod network;
+mod os;
 mod repo;
 mod repos;
 mod store;
@@ -30,6 +30,7 @@ async fn main() {
     match args {
         Cli::Repo(cmd) => repo::run(cmd).await,
         Cli::Install(args) => repo_list.install_font_cmd(args).await,
+        Cli::List => repo_list.list_fonts_cmd().await,
         _ => todo!(),
     }
 }

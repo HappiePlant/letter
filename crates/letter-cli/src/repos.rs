@@ -76,4 +76,14 @@ impl RepoList {
             }
         }
     }
+
+    pub(crate) async fn list_fonts_cmd(&self) {
+        let installed_fonts = store::list_fonts();
+        for font in installed_fonts {
+            println!(
+                "Font: {}, Repo: {}, Version: {}",
+                font.id, font.repo_id, font.version
+            );
+        }
+    }
 }

@@ -10,6 +10,8 @@ use globset::{Glob, GlobSetBuilder};
 use letter_core::font::{FileType, Version};
 use zip::ZipArchive;
 
+use crate::font::InstalledFont;
+
 pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     ProjectDirs::from("", "", "letter")
         .unwrap()
@@ -59,4 +61,26 @@ pub(crate) fn store_font(
         }
     }
     return Ok(font_dir);
+}
+
+pub(crate) fn list_fonts() -> Vec<InstalledFont> {
+    let mut installed_fonts: Vec<InstalledFont> = Vec::new();
+    let repos = fs::read_dir(STORE_DIR.as_path()).expect("Failed to read store directory");
+    for repo in repos {
+        let repo = repo.expect("Failed to read repo directory");
+        let fonts = fs::read_dir(repo.path()).expect("Failed to read repo directory");
+        for font in fonts {
+            let font = font.expect("Failed to read version directory");
+            let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
+            for version in versions {
+                let version = version.expect("Failed to read version directory");
+                installed_fonts.push(InstalledFont {
+                    id: font.file_name().to_string_lossy().to_string(),
+                    repo_id: repo.file_name().to_string_lossy().to_string(),
+                    version: version.file_name().to_string_lossy().to_string(),
+                });
+            }
+        }
+    }
+    installed_fonts
 }
