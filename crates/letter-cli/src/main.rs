@@ -1,6 +1,6 @@
 mod config;
 mod config_file;
-mod font;
+mod args;
 mod network;
 mod os;
 mod repo;
@@ -14,10 +14,10 @@ use crate::repos::RepoList;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 enum Cli {
-    Install(font::InstallFontArgs),
-    Remove(font::FontArgs),
-    Disable(font::FontArgs),
-    Enable(font::FontArgs),
+    Install(args::InstallFontArgs),
+    Remove(args::FontArgs),
+    Disable(args::FontArgs),
+    Enable(args::FontArgs),
     List,
 
     #[clap(subcommand)]

@@ -10,7 +10,12 @@ use globset::{Glob, GlobSetBuilder};
 use letter_core::font::{FileType, Version, VersionFile};
 use zip::ZipArchive;
 
-use crate::font::StoredFont;
+#[derive(Clone, Debug)]
+pub(crate) struct StoredFont {
+    pub id: String,
+    pub repo_id: String,
+    pub version: String,
+}
 
 pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     ProjectDirs::from("", "", "letter")

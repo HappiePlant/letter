@@ -4,7 +4,12 @@ use std::{
     sync::LazyLock,
 };
 
-use crate::font::InstalledFont;
+#[derive(Clone, Debug)]
+pub(crate) struct InstalledFont {
+    pub id: String,
+    pub repo_id: String,
+}
+
 
 pub(crate) fn install_font(font_id: &str, repo_id: &str, store_path: PathBuf) {
     cfg_select! {

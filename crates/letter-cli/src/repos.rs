@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use letter_core::font::{Font, FontStyle};
 
 use crate::{
+    args::{FontArgs, InstallFontArgs},
     config::read_config,
     config_file::Config,
-    font::{FontArgs, InstallFontArgs, StoredFont},
     network::{download_font_file, RepoClient},
     os, store,
+    store::StoredFont,
 };
 
 pub(crate) struct RepoList {
