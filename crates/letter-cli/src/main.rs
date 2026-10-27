@@ -14,7 +14,7 @@ use crate::repos::RepoList;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 enum Cli {
-    Install(font::FontArgs),
+    Install(font::InstallFontArgs),
     Remove(font::FontArgs),
     Disable(font::FontArgs),
     Enable(font::FontArgs),

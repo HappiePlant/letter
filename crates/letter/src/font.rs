@@ -55,7 +55,7 @@ pub enum FileType {
     SingleFile,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct VersionFile {
     /// Glob pattern to match the files in the zip, or the single file name
     pub glob: String,
@@ -63,7 +63,7 @@ pub struct VersionFile {
     pub format: FontFormat,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum FontFormat {
     OTF,
@@ -73,7 +73,7 @@ pub enum FontFormat {
     TTC,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum FontStyle {
     Variable,

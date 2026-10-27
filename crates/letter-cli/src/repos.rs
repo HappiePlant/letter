@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use letter_core::font::Font;
+use letter_core::font::{Font, FontStyle};
 
 use crate::{
     config::read_config,
     config_file::Config,
-    font::{FontArgs, StoredFont},
+    font::{FontArgs, InstallFontArgs, StoredFont},
     network::{download_font_file, RepoClient},
     os, store,
 };
@@ -33,8 +33,35 @@ impl RepoList {
         Self { clients, config }
     }
 
-    async fn install_font(font: &Font, repo_id: &str) {
-        let version = font.versions.first().expect("Font has no versions");
+    async fn install_font(font: &Font, repo_id: &str, args: InstallFontArgs) {
+        let version = match args.version {
+            Some(number) => font.versions.iter().find(|v| v.number == number),
+            None => font.versions.first(),
+        }
+        .expect("Font has no versions");
+
+        if args.variable && args.r#static {
+            panic!("Can't install both variable and static variants");
+        }
+
+        let mut files = version.files.clone();
+        match args.format {
+            Some(format) => {
+                files.retain(|f| f.format == format.to_font_format());
+            }
+            None => {}
+        }
+        if args.variable {
+            files.retain(|f| f.style == FontStyle::Variable);
+        }
+        if args.r#static {
+            files.retain(|f| f.style == FontStyle::Static);
+        }
+
+        let version_file = files
+            .first()
+            .expect("No matching files found for the specified options");
+
         let mut file = None;
         for url in &version.urls {
             match download_font_file(url, &version.hash).await {
@@ -50,14 +77,15 @@ impl RepoList {
         if file.is_none() {
             panic!("Failed to download font file");
         }
-        let store_path = store::store_font(version, &font.id, repo_id, file.unwrap()).unwrap();
+        let store_path =
+            store::store_font(version, &font.id, repo_id, &version_file, file.unwrap()).unwrap();
         os::install_font(&font.id, repo_id, store_path);
     }
 
-    pub(crate) async fn install_font_cmd(&self, args: FontArgs) {
+    pub(crate) async fn install_font_cmd(&self, args: InstallFontArgs) {
         let mut valid_options = Vec::new();
         if args.repo.is_some() {
-            let repo_id = args.repo.unwrap();
+            let repo_id = args.repo.clone().unwrap();
             let client = self.clients.get(&repo_id).expect("Repo not found");
             match client.get_font(args.id.as_str()).await {
                 Ok(font) => {
@@ -80,7 +108,7 @@ impl RepoList {
             1 => {
                 let (repo_id, font) = &valid_options[0];
                 println!("Installing font: {} from repo: {}", font.name, repo_id);
-                Self::install_font(font, repo_id).await;
+                Self::install_font(font, repo_id, args).await;
             }
             _ => {
                 todo!("Multiple fonts found, please specify a repo");

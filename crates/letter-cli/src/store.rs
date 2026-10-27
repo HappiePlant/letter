@@ -7,7 +7,7 @@ use std::{
 
 use directories::ProjectDirs;
 use globset::{Glob, GlobSetBuilder};
-use letter_core::font::{FileType, Version};
+use letter_core::font::{FileType, Version, VersionFile};
 use zip::ZipArchive;
 
 use crate::font::StoredFont;
@@ -29,6 +29,7 @@ pub(crate) fn store_font(
     version: &Version,
     font_id: &str,
     repo_id: &str,
+    version_file: &VersionFile,
     file: Vec<u8>,
 ) -> Result<PathBuf, String> {
     let font_dir = STORE_DIR.join(repo_id).join(font_id).join(&version.number);
@@ -40,9 +41,7 @@ pub(crate) fn store_font(
             let mut zip = ZipArchive::new(cursor).expect("Can't open zip");
 
             let mut glob_set_builder = GlobSetBuilder::new();
-            for pattern in &version.files {
-                glob_set_builder.add(Glob::new(&pattern.glob).expect("Failed to create glob"));
-            }
+            glob_set_builder.add(Glob::new(&version_file.glob).expect("Failed to create glob"));
             let glob_set = glob_set_builder.build().unwrap();
 
             for i in 0..zip.len() {
