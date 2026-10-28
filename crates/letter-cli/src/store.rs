@@ -42,10 +42,16 @@ pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
         .join("store")
 });
 
-pub(crate) fn get_store_path(repo_id: &str, font_id: &str) -> PathBuf {
+pub(crate) fn get_store_path(repo_id: &str, font_id: &str) -> Result<PathBuf, Error> {
     let dir = STORE_DIR.join(repo_id).join(font_id);
-    let mut versions = fs::read_dir(&dir).unwrap();
-    dir.join(versions.nth(0).unwrap().unwrap().file_name())
+
+    let version_entry = fs::read_dir(&dir)
+        .map_err(|_| Error::StoreIoError("Failed to read versions dir".to_string()))?
+        .filter_map(|res| res.ok())
+        .find(|entry| entry.path().is_dir())
+        .ok_or_else(|| Error::StoreIoError("No version directory found".to_string()))?;
+
+    Ok(dir.join(version_entry.file_name()))
 }
 
 pub(crate) fn store_font(

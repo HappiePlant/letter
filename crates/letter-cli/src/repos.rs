@@ -149,8 +149,8 @@ impl RepoList {
         }
     }
 
-    pub(crate) async fn list_fonts_cmd(&self) {
-        let stored_fonts = store::list_fonts();
+    pub(crate) async fn list_fonts_cmd(&self) -> Result<(), Error> {
+        let stored_fonts = store::list_fonts()?;
         let installed_fonts = os::list_fonts();
         for font in stored_fonts {
             let is_enabled = installed_fonts
@@ -161,6 +161,7 @@ impl RepoList {
                 font.id, font.repo_id, font.version, is_enabled
             );
         }
+        Ok(())
     }
 
     fn find_font(&self, font_id: &str) -> Result<StoredFont, Error> {
@@ -174,27 +175,33 @@ impl RepoList {
         }
     }
 
-    pub(crate) async fn remove_font_cmd(&self, args: FontArgs) {
-        let repo_id = args
-            .repo
-            .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
-        store::remove_font(&args.id, &repo_id).unwrap();
+    pub(crate) async fn remove_font_cmd(&self, args: FontArgs) -> Result<(), Error> {
+        let repo_id = match args.repo {
+            Some(id) => id,
+            None => self.find_font(&args.id)?.repo_id,
+        };
+        store::remove_font(&args.id, &repo_id)?;
         os::remove_font(&args.id, &repo_id);
+        Ok(())
     }
 
-    pub(crate) async fn disable_font_cmd(&self, args: FontArgs) {
-        let repo_id = args
-            .repo
-            .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
+    pub(crate) async fn disable_font_cmd(&self, args: FontArgs) -> Result<(), Error> {
+        let repo_id = match args.repo {
+            Some(id) => id,
+            None => self.find_font(&args.id)?.repo_id,
+        };
         os::remove_font(&args.id, &repo_id);
+        Ok(())
     }
 
-    pub(crate) async fn enable_font_cmd(&self, args: FontArgs) {
-        let repo_id = args
-            .repo
-            .unwrap_or_else(|| self.find_font(&args.id).unwrap().repo_id);
-        let store_path = store::get_store_path(&repo_id, &args.id);
+    pub(crate) async fn enable_font_cmd(&self, args: FontArgs) -> Result<(), Error> {
+        let repo_id = match args.repo {
+            Some(id) => id,
+            None => self.find_font(&args.id)?.repo_id,
+        };
+        let store_path = store::get_store_path(&repo_id, &args.id)?;
         os::install_font(&args.id, &repo_id, store_path);
+        Ok(())
     }
 
     pub(crate) async fn search_fonts_cmd(&self, args: SearchArgs) {
