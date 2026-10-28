@@ -1,6 +1,7 @@
 use clap::{Parser, ValueEnum};
 use clap_complete::Shell;
 use letter_core::font::FontFormat;
+use serde::{Deserialize, Serialize};
 
 #[derive(Parser, Debug)]
 pub(crate) struct FontArgs {
@@ -56,7 +57,8 @@ pub(crate) struct UpdateFontArgs {
     pub(crate) repo: Option<String>,
 }
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub(crate) enum CliFontFormat {
     OTF,
     TTF,

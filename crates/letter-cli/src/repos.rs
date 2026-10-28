@@ -53,17 +53,21 @@ impl RepoList {
         }
 
         let mut files = version.files.clone();
-        match format {
+        match &format {
             Some(format) => {
                 files.retain(|f| f.format == format.to_font_format());
             }
             None => {}
         }
+        let style_preference;
         if variable {
             files.retain(|f| f.style == FontStyle::Variable);
-        }
-        if r#static {
+            style_preference = Some(FontStyle::Variable);
+        } else if r#static {
             files.retain(|f| f.style == FontStyle::Static);
+            style_preference = Some(FontStyle::Static);
+        } else {
+            style_preference = None;
         }
 
         let version_file = files
@@ -85,8 +89,16 @@ impl RepoList {
         if file.is_none() {
             panic!("Failed to download font file");
         }
-        let store_path =
-            store::store_font(version, &font.id, repo_id, &version_file, file.unwrap()).unwrap();
+        let store_path = store::store_font(
+            version,
+            &font.id,
+            repo_id,
+            &version_file,
+            file.unwrap(),
+            format,
+            style_preference,
+        )
+        .unwrap();
         os::install_font(&font.id, repo_id, store_path);
     }
 
@@ -221,10 +233,26 @@ impl RepoList {
                         "Updating font: {} from version: {} to version: {}",
                         font.id, font.version, latest_version.number
                     );
+
+                    let font_config = store::get_font_preference(&font.id, &font.repo_id);
+                    let (variable, r#static) = match font_config.style_preference {
+                        Some(FontStyle::Variable) => (true, false),
+                        Some(FontStyle::Static) => (false, true),
+                        None => (false, false),
+                    };
+
                     store::remove_font(&font.id, &font.repo_id).unwrap();
                     os::remove_font(&font.id, &&font.repo_id);
-                    // TODO: Make font update respect previous selections
-                    Self::install_font(&remote_font, &font.repo_id, None, None, false, false).await;
+
+                    Self::install_font(
+                        &remote_font,
+                        &font.repo_id,
+                        font_config.format_preference,
+                        None,
+                        variable,
+                        r#static,
+                    )
+                    .await;
                 } else {
                     println!("Font: {} is already up to date", font.id);
                 }

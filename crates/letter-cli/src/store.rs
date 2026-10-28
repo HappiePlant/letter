@@ -7,14 +7,32 @@ use std::{
 
 use directories::ProjectDirs;
 use globset::{Glob, GlobSetBuilder};
-use letter_core::font::{FileType, Version, VersionFile};
+use letter_core::font::{FileType, FontStyle, Version, VersionFile};
+use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
+
+use crate::args::CliFontFormat;
 
 #[derive(Clone, Debug)]
 pub(crate) struct StoredFont {
     pub id: String,
     pub repo_id: String,
     pub version: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub(crate) struct FontConfig {
+    pub style_preference: Option<FontStyle>,
+    pub format_preference: Option<CliFontFormat>,
+}
+
+impl Default for FontConfig {
+    fn default() -> Self {
+        Self {
+            format_preference: None,
+            style_preference: None,
+        }
+    }
 }
 
 pub(crate) static STORE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
@@ -36,9 +54,12 @@ pub(crate) fn store_font(
     repo_id: &str,
     version_file: &VersionFile,
     file: Vec<u8>,
+    format_preference: Option<CliFontFormat>,
+    style_preference: Option<FontStyle>,
 ) -> Result<PathBuf, String> {
-    let font_dir = STORE_DIR.join(repo_id).join(font_id).join(&version.number);
-    fs::create_dir_all(&font_dir).expect("Failed to create font directory");
+    let font_dir = STORE_DIR.join(repo_id).join(font_id);
+    let version_dir = font_dir.join(&version.number);
+    fs::create_dir_all(&version_dir).expect("Failed to create font directory");
 
     match version.r#type {
         FileType::Zip => {
@@ -53,7 +74,7 @@ pub(crate) fn store_font(
                 let mut item = zip.by_index(i).unwrap();
                 let path = item.enclosed_name().expect("Failed to read path");
                 if glob_set.is_match(&path) {
-                    let mut out = fs::File::create(font_dir.join(path.file_name().unwrap()))
+                    let mut out = fs::File::create(version_dir.join(path.file_name().unwrap()))
                         .expect("Can't create file");
                     io::copy(&mut item, &mut out).expect("Failed to write");
                 }
@@ -67,10 +88,16 @@ pub(crate) fn store_font(
                 .expect("Single file should contain one full glob filename")
                 .glob;
 
-            fs::write(font_dir.join(filename), file).expect("Failed to write file");
+            fs::write(version_dir.join(filename), file).expect("Failed to write file");
         }
     }
-    return Ok(font_dir);
+    let config = FontConfig {
+        style_preference,
+        format_preference,
+    };
+    let config = toml::to_string_pretty(&config).unwrap();
+    fs::write(font_dir.join("font.toml"), config).unwrap();
+    return Ok(version_dir);
 }
 
 pub(crate) fn list_fonts() -> Vec<StoredFont> {
@@ -84,6 +111,9 @@ pub(crate) fn list_fonts() -> Vec<StoredFont> {
             let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
             for version in versions {
                 let version = version.expect("Failed to read version directory");
+                if version.path().is_file() {
+                    continue;
+                }
                 installed_fonts.push(StoredFont {
                     id: font.file_name().to_string_lossy().to_string(),
                     repo_id: repo.file_name().to_string_lossy().to_string(),
@@ -111,6 +141,9 @@ pub(crate) fn find_fonts_in_repo(
             let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
             for version in versions {
                 let version = version.expect("Failed to read version directory");
+                if version.path().is_file() {
+                    continue;
+                }
                 matches.push(StoredFont {
                     id: font.file_name().to_string_lossy().to_string(),
                     repo_id: repo_id.to_string(),
@@ -147,4 +180,12 @@ pub(crate) fn remove_font(font_id: &str, repo_id: &str) -> Result<PathBuf, ()> {
     } else {
         Err(())
     }
+}
+
+pub(crate) fn get_font_preference(font_id: &str, repo_id: &str) -> FontConfig {
+    let font_config_path = STORE_DIR.join(repo_id).join(font_id).join("font.toml");
+    fs::read_to_string(font_config_path)
+        .ok()
+        .and_then(|content| toml::from_str(&content).ok())
+        .unwrap_or_default()
 }
