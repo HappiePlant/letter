@@ -11,7 +11,7 @@ use letter_core::font::{FileType, FontStyle, Version, VersionFile};
 use serde::{Deserialize, Serialize};
 use zip::ZipArchive;
 
-use crate::args::CliFontFormat;
+use crate::{args::CliFontFormat, error::Error};
 
 #[derive(Clone, Debug)]
 pub(crate) struct StoredFont {
@@ -56,27 +56,37 @@ pub(crate) fn store_font(
     file: Vec<u8>,
     format_preference: Option<CliFontFormat>,
     style_preference: Option<FontStyle>,
-) -> Result<PathBuf, String> {
+) -> Result<PathBuf, Error> {
     let font_dir = STORE_DIR.join(repo_id).join(font_id);
     let version_dir = font_dir.join(&version.number);
-    fs::create_dir_all(&version_dir).expect("Failed to create font directory");
+    fs::create_dir_all(&version_dir)
+        .map_err(|_| Error::StoreIoError("Failed to create font directory".to_string()))?;
 
     match version.r#type {
         FileType::Zip => {
             let cursor = Cursor::new(file);
-            let mut zip = ZipArchive::new(cursor).expect("Can't open zip");
+            let mut zip = ZipArchive::new(cursor)
+                .map_err(|_| Error::ZipError("Can't open zip".to_string()))?;
 
             let mut glob_set_builder = GlobSetBuilder::new();
-            glob_set_builder.add(Glob::new(&version_file.glob).expect("Failed to create glob"));
-            let glob_set = glob_set_builder.build().unwrap();
+            glob_set_builder.add(Glob::new(&version_file.glob)?);
+            let glob_set = glob_set_builder.build()?;
 
             for i in 0..zip.len() {
                 let mut item = zip.by_index(i).unwrap();
-                let path = item.enclosed_name().expect("Failed to read path");
+                let path = item
+                    .enclosed_name()
+                    .ok_or(Error::ZipError("Failed to read path".to_string()))?;
                 if glob_set.is_match(&path) {
-                    let mut out = fs::File::create(version_dir.join(path.file_name().unwrap()))
-                        .expect("Can't create file");
-                    io::copy(&mut item, &mut out).expect("Failed to write");
+                    let mut out = fs::File::create(
+                        version_dir.join(
+                            path.file_name()
+                                .ok_or(Error::ZipError("Failed to get filename".to_string()))?,
+                        ),
+                    )
+                    .map_err(|_| Error::StoreIoError("Failed to create file".to_string()))?;
+                    io::copy(&mut item, &mut out)
+                        .map_err(|_| Error::StoreIoError("Failed to write".to_string()))?;
                 }
             }
         }
@@ -88,16 +98,18 @@ pub(crate) fn store_font(
                 .expect("Single file should contain one full glob filename")
                 .glob;
 
-            fs::write(version_dir.join(filename), file).expect("Failed to write file");
+            fs::write(version_dir.join(filename), file)
+                .map_err(|_| Error::StoreIoError("Failed to write single file".to_string()))?;
         }
     }
     let config = FontConfig {
         style_preference,
         format_preference,
     };
-    let config = toml::to_string_pretty(&config).unwrap();
-    fs::write(font_dir.join("font.toml"), config).unwrap();
-    return Ok(version_dir);
+    let config = toml::to_string_pretty(&config)?;
+    fs::write(font_dir.join("font.toml"), config)
+        .map_err(|_| Error::StoreIoError("Failed to write font config file".to_string()))?;
+    Ok(version_dir)
 }
 
 pub(crate) fn list_fonts() -> Vec<StoredFont> {

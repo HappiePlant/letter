@@ -6,6 +6,7 @@ use crate::{
     args::{CliFontFormat, FontArgs, InstallFontArgs, SearchArgs, UpdateFontArgs},
     config::read_config,
     config_file::Config,
+    error::Error::{self, RepoNotFound},
     network::{download_font_file, RepoClient},
     os,
     store::{self, StoredFont},
@@ -17,7 +18,10 @@ pub(crate) struct RepoList {
 
 impl RepoList {
     pub(crate) fn new() -> Self {
-        let config = read_config().unwrap_or_else(|_| Config::new());
+        let config = read_config().unwrap_or_else(|_| {
+            print!("Could not load config");
+            Config::new()
+        });
         let clients = config
             .repo
             .iter()
@@ -40,15 +44,15 @@ impl RepoList {
         version: Option<String>,
         variable: bool,
         r#static: bool,
-    ) {
+    ) -> Result<(), Error> {
         let version = match version {
             Some(number) => font.versions.iter().find(|v| v.number == number),
             None => font.versions.first(),
         }
-        .expect("Font has no versions");
+        .ok_or(Error::FontVersionNotFound)?;
 
         if variable && r#static {
-            panic!("Can't install both variable and static variants");
+            return Err(Error::ArgsBothVariableStatic);
         }
 
         let mut files = version.files.clone();
@@ -69,9 +73,7 @@ impl RepoList {
             style_preference = None;
         }
 
-        let version_file = files
-            .first()
-            .expect("No matching files found for the specified options");
+        let version_file = files.first().ok_or(Error::FontNoMatch)?;
 
         let mut file = None;
         for url in &version.urls {
@@ -86,7 +88,7 @@ impl RepoList {
             }
         }
         if file.is_none() {
-            panic!("Failed to download font file");
+            return Err(Error::FontDownloadFailure);
         }
         let store_path = store::store_font(
             version,
@@ -96,21 +98,24 @@ impl RepoList {
             file.unwrap(),
             format,
             style_preference,
-        )
-        .unwrap();
+        )?;
         os::install_font(&font.id, repo_id, store_path);
+        Ok(())
     }
 
-    pub(crate) async fn install_font_cmd(&self, args: InstallFontArgs) {
+    pub(crate) async fn install_font_cmd(&self, args: InstallFontArgs) -> Result<(), Error> {
         let mut valid_options = Vec::new();
         if args.repo.is_some() {
             let repo_id = args.repo.clone().unwrap();
-            let client = self.clients.get(&repo_id).expect("Repo not found");
+            let client = self
+                .clients
+                .get(&repo_id)
+                .ok_or(RepoNotFound(repo_id.clone()))?;
             match client.get_font(args.id.as_str()).await {
                 Ok(font) => {
                     valid_options.push((repo_id, font));
                 }
-                Err(_) => {}
+                Err(err) => return Err(err),
             }
         } else {
             for (repo_id, client) in self.clients.iter() {
@@ -118,12 +123,13 @@ impl RepoList {
                     Ok(font) => {
                         valid_options.push((repo_id.clone(), font));
                     }
+                    Err(Error::RepoFetchNotFound) => {}
                     Err(_) => {}
                 }
             }
         }
         match valid_options.len() {
-            0 => println!("Font not found in any repo"),
+            0 => Err(Error::FontNotFound),
             1 => {
                 let (repo_id, font) = &valid_options[0];
                 println!("Installing font: {} from repo: {}", font.name, repo_id);
@@ -135,7 +141,7 @@ impl RepoList {
                     args.variable,
                     args.r#static,
                 )
-                .await;
+                .await
             }
             _ => {
                 todo!("Multiple fonts found, please specify a repo");
