@@ -20,7 +20,7 @@ pub struct RepoInfo {
     pub id: String,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum UriType {
     /// External link

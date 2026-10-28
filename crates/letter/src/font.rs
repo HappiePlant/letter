@@ -3,7 +3,7 @@ use utoipa::ToSchema;
 
 use crate::{UriType, author::Author, collection::Collection};
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 /// Font metadata
 pub struct Font {
     pub id: String,
@@ -21,14 +21,14 @@ pub struct Font {
     pub versions: Vec<Version>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct ForkOf {
     pub uri: String,
     pub r#type: UriType,
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct FontUrls {
     /// Official website of the font
     pub website: Option<String>,
@@ -36,7 +36,7 @@ pub struct FontUrls {
     pub source: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct Version {
     pub number: String,
     /// Direct download url to the file, backup urls can be provided
@@ -48,7 +48,7 @@ pub struct Version {
     pub files: Vec<VersionFile>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum FileType {
     Zip,
@@ -80,7 +80,7 @@ pub enum FontStyle {
     Static,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct CollectionRelation {
     pub url: Option<String>,
     pub collection: Collection,
