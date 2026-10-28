@@ -73,6 +73,18 @@ pub enum FontFormat {
     TTC,
 }
 
+impl FontFormat {
+    pub fn to_string(&self) -> String {
+        match self {
+            FontFormat::OTF => "otf".to_string(),
+            FontFormat::TTF => "ttf".to_string(),
+            FontFormat::WOFF => "woff".to_string(),
+            FontFormat::WOFF2 => "woff2".to_string(),
+            FontFormat::TTC => "ttc".to_string(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, ToSchema, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum FontStyle {
