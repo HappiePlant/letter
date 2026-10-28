@@ -61,26 +61,21 @@ fn list_repos() -> Result<(), Error> {
     // TODO: Make tab size dynamic
 }
 
-async fn get_repo_info(args: InfoArgs) {
-    let config: Config = match read_config() {
-        Ok(config) => config,
-        Err(err) => {
-            println!("{}", err);
-            return;
-        }
-    };
+async fn get_repo_info(args: InfoArgs) -> Result<(), Error> {
+    let config: Config = read_config()?;
     let client = RepoClient {
         base_url: config
             .repo
             .iter()
             .find(|repo| repo.id == args.id)
-            .expect("Repo not found")
+            .ok_or(Error::RepoNotFound(args.id))?
             .url
             .clone()
             .to_string(),
     };
-    let repo_info = client.get_repo_info().await.unwrap();
+    let repo_info = client.get_repo_info().await?;
     print_repo_info(&repo_info);
+    Ok(())
 }
 
 fn print_repo_info(info: &RepoInfo) {
@@ -92,27 +87,15 @@ fn print_repo_info(info: &RepoInfo) {
     );
 }
 
-async fn add_repo(args: AddArgs) {
-    let mut config: Config = match read_config() {
-        Ok(config) => config,
-        Err(err) => {
-            println!("{}", err);
-            return;
-        }
-    };
+async fn add_repo(args: AddArgs) -> Result<(), Error> {
+    let mut config: Config = read_config()?;
 
-    let url = match Url::parse(&args.url) {
-        Ok(url) => url,
-        Err(_) => {
-            println!("Invalid URL");
-            return;
-        }
-    };
+    let url = Url::parse(&args.url).map_err(|_| Error::ArgsInvalidUrl)?;
 
     let client = RepoClient {
         base_url: url.to_string(),
     };
-    let repo_info = client.get_repo_info().await.unwrap();
+    let repo_info = client.get_repo_info().await?;
 
     print_repo_info(&repo_info);
 
@@ -125,51 +108,39 @@ async fn add_repo(args: AddArgs) {
         Style::new().bold().paint("\"...")
     );
 
-    let id = args.id.unwrap_or_else(|| "ofa".to_string());
+    let id = args.id.unwrap_or_else(|| repo_info.id);
 
     for repo in &config.repo {
         if url == repo.url {
-            println!("Repo {} already exists (same url)", repo.id);
-            return;
+            return Err(Error::RepoUrlAlreadyExists);
         }
         if id == repo.id {
-            println!("Repo with name {} already exists", id);
-            return;
+            return Err(Error::RepoIdAlreadyExists);
         }
     }
 
     config.repo.push(Repo { id, url });
 
-    match write_config(&config) {
-        Ok(_) => println!("Repo added"),
-        Err(err) => {
-            println!("{}", err);
-        }
-    };
+    write_config(&config)?;
+    println!("Repo added");
+    Ok(())
 }
 
-fn remove_repo(args: RemoveArgs) {
-    let mut config: Config = match read_config() {
-        Ok(config) => config,
-        Err(err) => {
-            println!("{}", err);
-            return;
-        }
-    };
+fn remove_repo(args: RemoveArgs) -> Result<(), Error> {
+    let mut config: Config = read_config()?;
 
     let index = config.repo.iter().position(|repo| repo.id == args.id);
 
-    if index.is_none() {
-        println!("Repo {} was not found", args.id);
-        return;
+    match index {
+        Some(i) => {
+            config.repo.remove(i);
+        }
+        None => {
+            return Err(Error::RepoNotFound(args.id));
+        }
     }
 
-    config.repo.remove(index.unwrap());
-
-    match write_config(&config) {
-        Ok(_) => println!("Repo {} was removed", args.id),
-        Err(err) => {
-            println!("{}", err);
-        }
-    };
+    write_config(&config)?;
+    println!("Repo {} was removed", args.id);
+    Ok(())
 }

@@ -5,6 +5,12 @@ pub enum Error {
     #[error("Repository {0} not found")]
     RepoNotFound(String),
 
+    #[error("Repo ID already exists")]
+    RepoIdAlreadyExists,
+
+    #[error("Repo url already exists")]
+    RepoUrlAlreadyExists,
+
     #[error("Error fetching from repository")]
     RepoFetchError,
 
@@ -22,6 +28,9 @@ pub enum Error {
 
     #[error("Can't install both variable and static variants")]
     ArgsBothVariableStatic,
+
+    #[error("Invalid URL was provided")]
+    ArgsInvalidUrl,
 
     #[error("No matching files found for the specified options")]
     FontNoMatch,
