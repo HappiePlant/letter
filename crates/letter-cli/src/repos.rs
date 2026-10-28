@@ -13,7 +13,6 @@ use crate::{
 
 pub(crate) struct RepoList {
     clients: HashMap<String, RepoClient>,
-    config: Config,
 }
 
 impl RepoList {
@@ -31,7 +30,7 @@ impl RepoList {
                 )
             })
             .collect();
-        Self { clients, config }
+        Self { clients }
     }
 
     async fn install_font(
