@@ -46,6 +46,16 @@ pub(crate) struct InstallFontArgs {
     pub(crate) format: Option<CliFontFormat>,
 }
 
+#[derive(Parser, Debug)]
+pub(crate) struct UpdateFontArgs {
+    /// Font id, if not specified, all installed fonts will be updated
+    pub(crate) id: Option<String>,
+
+    /// Repository id, will only update fonts from this repository if specified
+    #[arg(short, long)]
+    pub(crate) repo: Option<String>,
+}
+
 #[derive(Debug, Clone, ValueEnum)]
 pub(crate) enum CliFontFormat {
     OTF,

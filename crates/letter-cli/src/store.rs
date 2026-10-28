@@ -95,26 +95,46 @@ pub(crate) fn list_fonts() -> Vec<StoredFont> {
     installed_fonts
 }
 
+pub(crate) fn find_fonts_in_repo(
+    font_id: Option<&str>,
+    repo_id: &str,
+) -> Result<Vec<StoredFont>, ()> {
+    let mut matches: Vec<StoredFont> = Vec::new();
+    let dir = STORE_DIR.join(repo_id);
+    if !dir.exists() {
+        return Err(());
+    }
+    let fonts = fs::read_dir(dir).expect("Failed to read font directory");
+    for font in fonts {
+        let font = font.expect("Failed to read version directory");
+        if font_id.is_none() || font.file_name().to_string_lossy() == font_id.unwrap() {
+            let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
+            for version in versions {
+                let version = version.expect("Failed to read version directory");
+                matches.push(StoredFont {
+                    id: font.file_name().to_string_lossy().to_string(),
+                    repo_id: repo_id.to_string(),
+                    version: version.file_name().to_string_lossy().to_string(),
+                });
+            }
+        }
+    }
+    Ok(matches)
+}
+
 pub(crate) fn find_font(font_id: &str) -> Result<Vec<StoredFont>, ()> {
     let mut matches: Vec<StoredFont> = Vec::new();
     let repos = fs::read_dir(STORE_DIR.as_path()).expect("Failed to read store directory");
     for repo in repos {
-        let repo = repo.expect("Failed to read repo directory");
-        let fonts = fs::read_dir(repo.path()).expect("Failed to read repo directory");
-        for font in fonts {
-            let font = font.expect("Failed to read version directory");
-            if font.file_name().to_string_lossy() == font_id {
-                let versions = fs::read_dir(font.path()).expect("Failed to read font directory");
-                for version in versions {
-                    let version = version.expect("Failed to read version directory");
-                    matches.push(StoredFont {
-                        id: font.file_name().to_string_lossy().to_string(),
-                        repo_id: repo.file_name().to_string_lossy().to_string(),
-                        version: version.file_name().to_string_lossy().to_string(),
-                    });
-                }
-            }
-        }
+        find_fonts_in_repo(
+            Some(font_id),
+            repo.expect("Failed to read repo directory")
+                .file_name()
+                .to_string_lossy()
+                .as_ref(),
+        )
+        .map(|mut fonts| matches.append(&mut fonts))
+        .ok();
     }
     Ok(matches)
 }
