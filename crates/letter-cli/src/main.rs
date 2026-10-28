@@ -59,7 +59,7 @@ async fn run(cli: Cli) -> Result<(), Error> {
         Cli::Install(args) => repo_list.install_font_cmd(args).await,
         Cli::Remove(args) => repo_list.remove_font_cmd(args).await?,
         Cli::List => repo_list.list_fonts_cmd().await?,
-        Cli::Update(args) => repo_list.update_fonts_cmd(args).await?,
+        Cli::Update(args) => repo_list.update_fonts_cmd(args).await,
         Cli::Enable(args) => repo_list.enable_font_cmd(args).await?,
         Cli::Disable(args) => repo_list.disable_font_cmd(args).await?,
         Cli::Search(args) => repo_list.search_fonts_cmd(args).await?,

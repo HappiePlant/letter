@@ -163,15 +163,13 @@ impl RepoList {
         }
     }
 
-    fn find_font(&self, font_id: &str) -> Result<StoredFont, ()> {
-        let fonts = store::find_font(font_id).unwrap();
+    fn find_font(&self, font_id: &str) -> Result<StoredFont, Error> {
+        let fonts = store::find_font(font_id)?;
         match fonts.len() {
-            0 => {
-                panic!("Font not found in any repo");
-            }
+            0 => Err(Error::FontNotFound),
             1 => Ok(fonts.first().unwrap().clone()),
             _ => {
-                panic!("Multiple fonts found, please specify a repo");
+                todo!("Multiple fonts found, please specify a repo");
             }
         }
     }
@@ -228,11 +226,17 @@ impl RepoList {
         }
     }
 
-    async fn update_font(&self, font: &StoredFont) {
-        let client = self.clients.get(&font.repo_id).expect("Repo not found");
+    async fn update_font(&self, font: &StoredFont) -> Result<(), Error> {
+        let client = self
+            .clients
+            .get(&font.repo_id)
+            .ok_or(Error::RepoNotFound(font.repo_id.clone()))?;
         match client.get_font(&font.id).await {
             Ok(remote_font) => {
-                let latest_version = remote_font.versions.first().expect("Font has no versions");
+                let latest_version = remote_font
+                    .versions
+                    .first()
+                    .ok_or(Error::FontVersionNotFound)?;
                 if latest_version.number != font.version {
                     println!(
                         "Updating font: {} from version: {} to version: {}",
@@ -246,7 +250,7 @@ impl RepoList {
                         None => (false, false),
                     };
 
-                    store::remove_font(&font.id, &font.repo_id).unwrap();
+                    store::remove_font(&font.id, &font.repo_id)?;
                     os::remove_font(&font.id, &&font.repo_id);
 
                     Self::install_font(
@@ -257,7 +261,7 @@ impl RepoList {
                         variable,
                         r#static,
                     )
-                    .await;
+                    .await?;
                 } else {
                     println!("Font: {} is already up to date", font.id);
                 }
@@ -265,22 +269,22 @@ impl RepoList {
             Err(_) => {
                 println!("Failed to fetch font info for: {}", font.id);
             }
-        }
+        };
+        Ok(())
     }
 
-    pub(crate) async fn update_fonts_cmd(&self, args: UpdateFontArgs) {
+    pub(crate) async fn update_fonts_cmd(&self, args: UpdateFontArgs) -> Result<(), Error> {
         let matched_fonts: Vec<StoredFont> = match (args.id.clone(), args.repo.clone()) {
-            (None, None) => store::list_fonts(),
-            (None, Some(repo_id)) => store::find_fonts_in_repo(None, &repo_id).unwrap(),
+            (None, None) => store::list_fonts()?,
+            (None, Some(repo_id)) => store::find_fonts_in_repo(None, &repo_id)?,
             (Some(font_id), None) => {
-                vec![self.find_font(&font_id).unwrap()]
+                vec![self.find_font(&font_id)?]
             }
-            (Some(font_id), Some(repo_id)) => {
-                store::find_fonts_in_repo(Some(&font_id), &repo_id).unwrap()
-            }
+            (Some(font_id), Some(repo_id)) => store::find_fonts_in_repo(Some(&font_id), &repo_id)?,
         };
         for font in matched_fonts {
-            self.update_font(&font).await;
+            self.update_font(&font).await?;
         }
+        Ok(())
     }
 }
