@@ -204,16 +204,20 @@ impl RepoList {
         Ok(())
     }
 
-    pub(crate) async fn search_fonts_cmd(&self, args: SearchArgs) {
+    pub(crate) async fn search_fonts_cmd(&self, args: SearchArgs) -> Result<(), Error> {
         let mut fonts: Vec<(String, Vec<Font>)> = Vec::new();
-        if args.repo.is_some() {
-            let repo_id = args.repo.clone().unwrap();
-            let client = self.clients.get(&repo_id).expect("Repo not found");
+        if let Some(repo_id) = args.repo {
+            let client = self
+                .clients
+                .get(&repo_id)
+                .ok_or(Error::RepoNotFound(repo_id.clone()))?;
             match client.search_fonts(args.query.as_deref()).await {
                 Ok(f) => {
                     fonts.push((repo_id, f));
                 }
-                Err(_) => {}
+                Err(err) => {
+                    return Err(err);
+                }
             }
         } else {
             for (repo_id, client) in self.clients.iter() {
@@ -231,6 +235,7 @@ impl RepoList {
                 println!("\tFont: {}, ID: {}", font.name, font.id);
             }
         }
+        Ok(())
     }
 
     async fn update_font(&self, font: &StoredFont) -> Result<(), Error> {

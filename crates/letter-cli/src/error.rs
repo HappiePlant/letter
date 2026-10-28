@@ -46,4 +46,7 @@ pub enum Error {
 
     #[error("Hash mismatch")]
     HashMismatch,
+
+    #[error("Config error: {0}")]
+    ConfigError(String),
 }

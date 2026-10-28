@@ -1,4 +1,5 @@
 use crate::config_file::{Config, Repo};
+use crate::error::Error;
 use crate::{
     config::{read_config, write_config},
     network::RepoClient,
@@ -40,7 +41,7 @@ pub(crate) struct InfoArgs {
     id: String,
 }
 
-pub(crate) async fn run(cmd: Command) {
+pub(crate) async fn run(cmd: Command) -> Result<(), Error> {
     match cmd {
         Command::List => list_repos(),
         Command::Add(args) => add_repo(args).await,
@@ -49,19 +50,14 @@ pub(crate) async fn run(cmd: Command) {
     }
 }
 
-fn list_repos() {
-    let config: Config = match read_config() {
-        Ok(config) => config,
-        Err(err) => {
-            println!("{}", err);
-            return;
-        }
-    };
+fn list_repos() -> Result<(), Error> {
+    let config: Config = read_config()?;
 
     println!("{}", Style::new().bold().paint("Repo ID\t\tURL"));
     for repo in config.repo {
         println!("{}\t\t{}", repo.id, repo.url);
     }
+    Ok(())
     // TODO: Make tab size dynamic
 }
 
